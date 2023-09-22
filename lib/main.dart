@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:sampel_force_update_to_api/device_info.dart';
-import 'package:sampel_force_update_to_api/repository.dart';
+import 'package:sampel_force_update_to_api/service.dart';
 
 final navigatorKeyProvider = Provider((_) {
   return GlobalKey<NavigatorState>();
@@ -35,37 +35,7 @@ class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
   @override
   void initState() {
     Future(() async {
-      try {
-        final response =
-            await ref.read(appVersionRepositoryProvider).confirmAppVersion();
-        final currentDeviceVersion = ref.read(currentVersionProvider);
-        log(currentDeviceVersion);
-        if (currentDeviceVersion == response.version) {
-          return;
-        }
-
-        if (!context.mounted) {
-          return;
-        }
-
-        log(context.mounted.toString());
-
-        final currentContext = ref.read(navigatorKeyProvider).currentContext!;
-        await showAdaptiveDialog(
-          context: currentContext,
-          barrierDismissible: false,
-          builder: (context) {
-            return AlertDialog.adaptive(
-              title: const Text('アプリのバージョンが更新されました。\nストアから更新をしてください。'),
-              actions: [
-                TextButton(onPressed: () {}, child: const Text('OK')),
-              ],
-            );
-          },
-        );
-      } catch (e) {
-        log(e.toString());
-      }
+      await _confirmAppVersion();
     });
     super.initState();
   }
@@ -96,6 +66,36 @@ class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
       case AppLifecycleState.detached:
         break;
       case AppLifecycleState.hidden:
+    }
+  }
+
+  Future<void> _confirmAppVersion() async {
+    try {
+      final isUpdatedNotNeeded =
+          await ref.read(appVersionServiceProvider).confirm();
+      if (isUpdatedNotNeeded) {
+        return;
+      }
+
+      if (!context.mounted) {
+        return;
+      }
+
+      final currentContext = ref.read(navigatorKeyProvider).currentContext!;
+      await showAdaptiveDialog(
+        context: currentContext,
+        barrierDismissible: false,
+        builder: (context) {
+          return AlertDialog.adaptive(
+            title: const Text('アプリのバージョンが更新されました。\nストアから更新をしてください。'),
+            actions: [
+              TextButton(onPressed: () {}, child: const Text('OK')),
+            ],
+          );
+        },
+      );
+    } catch (e) {
+      log(e.toString());
     }
   }
 }

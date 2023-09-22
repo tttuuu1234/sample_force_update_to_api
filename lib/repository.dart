@@ -9,10 +9,10 @@ final appVersionRepositoryProvider =
 class AppVersionRepository {
   const AppVersionRepository();
 
-  Future<AppVersionModel> confirmAppVersion() async {
+  Future<AppVersionModel> confirm() async {
     try {
       await Future.delayed(const Duration(seconds: 1));
-      return AppVersionModel.fromJson({'version': '1.0.1', 'device': 1});
+      return AppVersionModel.fromJson({'version': '1.2.0', 'device': 1});
     } catch (e) {
       throw Exception('エラーが発生しました。');
     }
