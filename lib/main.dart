@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:sampel_force_update_to_api/device_info.dart';
+import 'package:sampel_force_update_to_api/notifier.dart';
 import 'package:sampel_force_update_to_api/service.dart';
 
 final navigatorKeyProvider = Provider((_) {
@@ -38,6 +39,7 @@ class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
       await _confirmAppVersion();
     });
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
@@ -54,12 +56,10 @@ class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-    log('ライフサイクル');
-    log(state.name);
+  Future<void> didChangeAppLifecycleState(AppLifecycleState state) async {
     switch (state) {
       case AppLifecycleState.resumed:
+        await _confirmAppVersion();
         break;
       case AppLifecycleState.inactive:
       case AppLifecycleState.paused:
@@ -67,13 +67,16 @@ class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
         break;
       case AppLifecycleState.hidden:
     }
+    super.didChangeAppLifecycleState(state);
   }
 
   Future<void> _confirmAppVersion() async {
     try {
       final isUpdatedNotNeeded =
           await ref.read(appVersionServiceProvider).confirm();
-      if (isUpdatedNotNeeded) {
+      final isShow = ref.read(appVersionUpdateDialogProvider);
+      // ダイアログ表示済みor更新の必要ない場合は、ダイアログを表示させないため
+      if (isShow || isUpdatedNotNeeded) {
         return;
       }
 
@@ -82,6 +85,8 @@ class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
       }
 
       final currentContext = ref.read(navigatorKeyProvider).currentContext!;
+      // バックグラウンド復帰時にダイアログが重なって表示されるのを防ぐため
+      ref.read(appVersionUpdateDialogProvider.notifier).show();
       await showAdaptiveDialog(
         context: currentContext,
         barrierDismissible: false,
@@ -97,6 +102,12 @@ class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
     } catch (e) {
       log(e.toString());
     }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 }
 

@@ -15,8 +15,7 @@ class AppVersionService {
   Future<bool> confirm() async {
     try {
       final response = await ref.read(appVersionRepositoryProvider).confirm();
-      final latestVersion = response.version;
-      return ref.read(isUpdatedNotNeededProvider(latestVersion));
+      return ref.read(isUpdatedNotNeededProvider(response));
     } catch (e) {
       throw Exception();
     }
