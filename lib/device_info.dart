@@ -23,6 +23,7 @@ final isUpdatedNotNeededProvider =
   log(splitedCurrentVersion.toString());
   log(splitedLatestVersion.toString());
   // patchバージョンは一致していても不一致でもバージョンの更新は不要なため削除
+  // という要件の実装をしてみた
   splitedCurrentVersion.removeLast();
   splitedLatestVersion.removeLast();
   if (listEquals(splitedCurrentVersion, splitedLatestVersion)) {
